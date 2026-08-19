@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>勤務希望入力</title>
+<style>
+  :root{
+    --navy:#1F3864;--navy-2:#2E4A7D;--navy-soft:#E9EEF6;--bg:#F4F6FA;--card:#FFFFFF;
+    --line:#D8E0EC;--ink:#22303F;--muted:#8A97A8;--sun:#C0392B;--sat:#2E5FA3;
+    --paid:#2E8B7A;--paid-bg:#E3F3EE;--public:#6B7A90;--public-bg:#EAEEF4;
+    --work:#1F3864;--work-bg:#E4EAF4;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:"Meiryo","メイリオ","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;padding-bottom:96px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  header{background:var(--navy);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;
+    justify-content:space-between;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(31,56,100,.18);}
+  .brand{display:flex;align-items:baseline;gap:8px;}
+  .brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.02em;}
+  .brand .ver{font-size:11px;color:#AEC1E0;}
+  .sub{font-size:11px;color:#C4D2EA;margin-top:2px;}
+  .card{background:var(--card);margin:12px;border:1px solid var(--line);border-radius:12px;padding:12px;}
+  .card h2{font-size:12px;color:var(--navy);margin:0 0 10px;border-left:4px solid var(--navy);padding-left:8px;}
+  .row{display:flex;gap:8px;}
+  .row+.row{margin-top:8px;}
+  .field{flex:1;}
+  .field.sm{flex:.6;}
+  .field label{display:block;font-size:11px;color:var(--muted);margin:0 0 3px 2px;}
+  .field input,.field select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;
+    font-family:inherit;font-size:14px;color:var(--ink);background:#fff;}
+  .monthbar{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+    margin:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .monthbar button{border:none;background:var(--navy-soft);color:var(--navy);font-size:18px;width:52px;height:48px;cursor:pointer;font-weight:700;}
+  .monthbar button:active{background:#D6E0F0;}
+  .monthbar .mlabel{font-size:18px;font-weight:700;color:var(--navy);}
+  .strip{display:flex;gap:8px;margin:0 12px 12px;}
+  .strip .box{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;font-size:13px;display:flex;align-items:center;gap:6px;justify-content:center;}
+  .badge{font-weight:700;padding:2px 8px;border-radius:999px;font-size:12px;}
+  .badge.no{background:#FDECEC;color:var(--sun);} .badge.yes{background:#E6F4EA;color:#2E7D32;}
+  .list{margin:0 12px;display:grid;grid-auto-flow:column;grid-template-columns:1fr 1fr;grid-template-rows:repeat(var(--half,16),auto);gap:8px;}
+  @media(max-width:480px){.list{grid-template-columns:1fr;}}
+  .day{display:flex;align-items:stretch;background:var(--card);border:1px solid var(--line);
+    border-radius:11px;overflow:hidden;cursor:pointer;min-height:56px;}
+  .day:active{background:#F7F9FC;}
+  .day .dcol{width:58px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-right:1px solid var(--line);background:#FBFCFE;}
+  .day .dcol .num{font-size:20px;font-weight:700;line-height:1;color:var(--navy);}
+  .day .dcol .wd{font-size:11px;color:var(--muted);margin-top:2px;}
+  .day.sun .dcol .num,.day.sun .dcol .wd{color:var(--sun);}
+  .day.sat .dcol .num,.day.sat .dcol .wd{color:var(--sat);}
+  .day .val{flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 12px;}
+  .day .val .main{font-size:15px;font-weight:700;}
+  .day .val .main.empty{color:var(--muted);font-weight:400;}
+  .day .val .main.dim{color:var(--muted);font-weight:400;}
+  .reqtag{display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:0 5px;vertical-align:1px;}
+  .day.req .dcol{background:#EEF3FB;}
+  .day .val .note{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .v-work{color:var(--work);}.v-paid{color:var(--paid);}.v-public{color:var(--public);}
+  .actions{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.96);
+    backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:8px;max-width:760px;margin:0 auto;}
+  .btn{flex:1;border:none;border-radius:10px;padding:13px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;}
+  .btn.primary{background:var(--navy);color:#fff;flex:2;} .btn.primary:active{background:var(--navy-2);}
+  .btn.ghost{background:#fff;border:1px solid var(--navy);color:var(--navy);}
+  .overlay{position:fixed;inset:0;background:rgba(20,30,50,.45);z-index:40;display:none;align-items:flex-end;justify-content:center;}
+  .overlay.on{display:flex;}
+  .modal{background:#fff;width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:16px;max-height:90vh;overflow:auto;animation:up .18s ease;}
+  @media(min-width:560px){.overlay{align-items:center;}.modal{border-radius:16px;}}
+  @keyframes up{from{transform:translateY(20px);opacity:.6;}to{transform:none;opacity:1;}}
+  .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .mhead .mt{font-size:19px;font-weight:700;color:var(--navy);}
+  .mhead .x{border:none;background:#F0F3F8;width:34px;height:34px;border-radius:8px;font-size:18px;color:var(--muted);cursor:pointer;}
+  .seclabel{font-size:12px;font-weight:700;color:var(--navy);border-left:4px solid var(--navy);padding-left:8px;margin:10px 0 8px;}
+  .toggle{display:flex;gap:10px;margin-bottom:6px;}
+  .toggle button{flex:1;padding:16px;border-radius:11px;border:2px solid var(--line);background:#F7F9FC;
+    font-family:inherit;font-size:16px;font-weight:700;color:var(--muted);cursor:pointer;}
+  .toggle button.act-work{border-color:var(--navy);background:var(--navy);color:#fff;}
+  .toggle button.act-rest{border-color:var(--paid);background:var(--paid);color:#fff;}
+  .presets{display:flex;gap:6px;margin:4px 0 10px;}
+  .presets button{flex:1;padding:8px;border:1px solid var(--navy);background:#fff;color:var(--navy);
+    border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+  .presets button:active{background:var(--navy-soft);}
+  .timegrid{display:flex;gap:8px;}
+  .timegrid .field label{font-size:11px;}
+  .timegrid input{width:100%;padding:11px 8px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:15px;text-align:center;}
+  select.leave{width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:15px;background:#fff;}
+  textarea{width:100%;min-height:60px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;resize:vertical;}
+  .msave{display:flex;gap:10px;margin-top:16px;}
+  .msave button{flex:1;padding:14px;border-radius:10px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;border:none;}
+  .msave .save{background:var(--navy);color:#fff;flex:1.4;} .msave .clear{background:#fff;border:1px solid var(--sun);color:var(--sun);}
+  .msave .cancel{background:#F0F3F8;color:var(--ink);}
+  .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;
+    padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600;z-index:60;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 6px 20px rgba(31,56,100,.35);}
+  .toast.on{opacity:1;}
+  .hint{font-size:11px;color:var(--muted);text-align:center;margin:14px 12px 4px;}
+  input[type=file]{display:none;}
+  .namegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  @media(max-width:420px){.namegrid{grid-template-columns:repeat(2,1fr);}}
+  .chip{padding:12px 6px;border:2px solid var(--line);background:#F7F9FC;border-radius:10px;
+    font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center;line-height:1.3;}
+  .chip:active{background:var(--navy-soft);}
+  .chip.on{border-color:var(--navy);background:var(--navy);color:#fff;}
+  .chip .k{display:block;font-size:10px;font-weight:400;color:var(--muted);margin-top:2px;}
+  .chip.on .k{color:#AEC1E0;}
+  .namesel{width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:16px;color:var(--ink);background:#fff;font-weight:700;}
+  .selinfo{margin-top:10px;font-size:12px;color:var(--muted);}
+  .selinfo b{color:var(--navy);}
+  .manual{display:none;margin-top:10px;}
+  .manual.on{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.3</span></div>
+    <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
+  </header>
+
+  <div class="card">
+    <h2>系列を選択</h2>
+    <select id="brandSelect" class="namesel" style="margin-bottom:14px;"></select>
+    <h2>店舗を選択</h2>
+    <select id="storeSelect" class="namesel" style="margin-bottom:14px;"></select>
+    <h2>あなたの名前を選択</h2>
+    <select id="nameSelect" class="namesel"></select>
+    <div class="manual" id="manualBox">
+      <div class="row">
+        <div class="field"><label>氏名</label><input id="mName" placeholder="山田 太郎"></div>
+        <div class="field sm"><label>社員番号</label><input id="mNo" placeholder="010000"></div>
+      </div>
+    </div>
+    <div class="selinfo" id="selInfo">名前を選んでください</div>
+    <h2 style="margin-top:14px;">標準の勤務時間（自動セット・変更可）</h2>
+    <div class="row">
+      <div class="field"><label>開始</label><input id="stdStart" type="time" value="08:30"></div>
+      <div class="field"><label>終了</label><input id="stdEnd" type="time" value="17:30"></div>
+      <div class="field sm"><label>休憩(分)</label><input id="stdBreak" type="number" value="60" min="0" step="5"></div>
+    </div>
+  </div>
+
+  <div class="monthbar">
+    <button id="prevM">‹‹</button><div class="mlabel" id="monthLabel">2026年08月</div><button id="nextM">››</button>
+  </div>
+  <div class="strip">
+    <div class="box"><span id="statusBadge" class="badge no">未申請</span></div>
+    <div class="box" id="restBox">公休 －</div>
+  </div>
+  <div class="strip" style="margin-top:-4px;">
+    <div class="box" style="justify-content:space-between;">
+      <span style="font-size:12px;color:var(--muted);">今月の公休目標</span>
+      <span id="targetView" style="font-size:14px;font-weight:700;color:var(--navy);">－ 日</span>
+    </div>
+  </div>
+
+  <div class="list" id="dayList"></div>
+  <div class="hint">土＝法外・日＝法定・平日＝標準勤務が<b>既定で入っています</b>。休みたい日・変更したい日だけタップして上書きしてください。</div>
+</div>
+
+<div class="actions">
+  <button class="btn primary" id="submitBtn">送信する</button>
+  <button class="btn ghost" id="saveBtn">保存</button>
+  <button class="btn ghost" id="importBtn">読込</button>
+  <input type="file" id="fileInput" accept=".json,application/json">
+</div>
+
+<div class="overlay" id="overlay"><div class="modal">
+  <div class="mhead"><div class="mt" id="modalTitle">8/1(金)</div><button class="x" id="modalClose">×</button></div>
+  <div class="seclabel">シフト</div>
+  <div class="toggle"><button id="btnWork">出勤</button><button id="btnRest">休み</button></div>
+
+  <div id="workWrap" style="display:none;">
+    <div class="presets">
+      <button data-preset="std">標準</button>
+      <button data-preset="am">午前のみ</button>
+      <button data-preset="pm">午後のみ</button>
+    </div>
+    <div class="timegrid">
+      <div class="field"><label>開始</label><input id="wStart" type="time"></div>
+      <div class="field"><label>終了</label><input id="wEnd" type="time"></div>
+      <div class="field"><label>休憩(分)</label><input id="wBreak" type="number" min="0" step="5"></div>
+    </div>
+  </div>
+
+  <div id="restWrap" style="display:none;">
+    <div class="seclabel">休みの種別</div>
+    <select id="leaveSel" class="leave">
+      <option value="">選択してください</option>
+      <option value="法定">法定（法定休日）</option>
+      <option value="法外">法外（法定外休日）</option>
+      <option value="特休">特休</option>
+      <option value="有休">有休</option>
+      <option value="夏冬誕">夏冬誕</option>
+    </select>
+  </div>
+
+  <div class="seclabel">備考</div>
+  <textarea id="noteInput" placeholder="連絡事項など（任意）"></textarea>
+
+  <div class="msave">
+    <button class="save" id="modalSave">保存する</button>
+    <button class="clear" id="modalClear">既定に戻す</button>
+    <button class="cancel" id="modalCancel">キャンセル</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  // ▼▼▼ Google Apps Script の /exec URL をここに貼る（空ならファイル保存に切替）▼▼▼
+  var SUBMIT_URL = "https://script.google.com/macros/s/AKfycbxqDHuCPjS38klVA-5_t3-KY_JyqP2xdn-gr-H7Gctzh_URIofmBLKUI0lixULYz4LbUQ/exec";
+  var TOKEN = "";   // 受け皿スクリプトで TOKEN を設定した場合のみ同じ値を入れる
+  // ▲▲▲
+  var TARGETS = {};  // 管理者がシートに設定した公休目標（月→日数）。fetchTargetsで取得。
+  var WD=["日","月","火","水","木","金","土"];
+  // ▼ 店舗別の名簿。他店はここに追記していく ▼
+  var ROSTERS={
+    "額":[
+      {name:"川口　智正",no:"010114",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"木下　千春",no:"010077",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"大和田　理楠",no:"010055",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"金沢　真悠",no:"010043",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"下農　香",no:"010116",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"斉藤　幸重",no:"011119",kubun:"エース",start:"08:30",end:"16:30",brk:60},
+      {name:"池端　瞳",no:"011179",kubun:"エース",start:"09:00",end:"14:00",brk:0},
+      {name:"高野　美智代",no:"011182",kubun:"エース",start:"08:15",end:"16:30",brk:60},
+      {name:"小池　綾子",no:"011195",kubun:"エース",start:"08:15",end:"13:15",brk:150},
+      {name:"中坂　新一",no:"011181",kubun:"エース",start:"08:30",end:"17:30",brk:60}
+    ],
+    "神宮寺":[
+      {name:"宮﨑　亜紗美",no:"010005",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"楢原　玲央也",no:"010029",kubun:"社員",start:"10:00",end:"19:00",brk:60},
+      {name:"名村　和江",no:"010082",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"石山　衛",no:"010059",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"濱崎　裕子",no:"010106",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"所村　裕子",no:"011054",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"東　茜",no:"011104",kubun:"エース",start:"08:30",end:"13:30",brk:0},
+      {name:"栄田　倫世",no:"011140",kubun:"エース",start:"09:00",end:"15:00",brk:45},
+      {name:"中西　真弓",no:"011196",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"茂木　日和",no:"011204",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"長谷　沙希",no:"011206",kubun:"エース",start:"09:30",end:"15:30",brk:45},
+      {name:"武田　裕史",no:"011174",kubun:"エース",start:"08:00",end:"17:15",brk:330}
+    ],
+    "駅西":[
+      {name:"高井　 路子",no:"010036",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"近江　一樹",no:"010021",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"表　淳一",no:"010027",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"野崎　ひかる",no:"010023",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"安田　美穂",no:"010091",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"網島　勝政",no:"010107",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"西村　亮太",no:"010076",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"辻　茉希",no:"010121",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"中屋　朋子",no:"011063",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"浅井　真樹",no:"011190",kubun:"エース",start:"10:00",end:"15:00",brk:45},
+      {name:"中保　はるな",no:"011215",kubun:"エース",start:"09:30",end:"17:00",brk:60}
+    ],
+    "小立野":[
+      {name:"磨伊　宏",no:"010016",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"玉谷　三千代",no:"010024",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"中嶋　美江子",no:"010112",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"畑　のぞみ",no:"010033",kubun:"社員",start:"09:15",end:"15:15",brk:60},
+      {name:"大沢　敬子",no:"011008",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"白石　美千代",no:"011015",kubun:"エース",start:"10:00",end:"14:30",brk:0},
+      {name:"寺田　はるか",no:"011048",kubun:"エース",start:"09:00",end:"14:30",brk:60},
+      {name:"池田　麗子",no:"011095",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"国奥　麻耶",no:"011143",kubun:"エース",start:"08:15",end:"13:15",brk:0},
+      {name:"松嶋　佳美",no:"011108",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"松本　理奈",no:"011180",kubun:"エース",start:"08:15",end:"16:15",brk:60},
+      {name:"木村　斉",no:"011199",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"大野亜弓",no:"011217",kubun:"エース",start:"11:45",end:"17:30",brk:0}
+    ],
+    "新神田":[
+      {name:"高畠　遥香",no:"010010",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"尾山　奈美",no:"010015",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"新谷　羊子",no:"010044",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"古賀　昌美",no:"010071",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"三谷　明広",no:"010069",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"若林 柚希",no:"010119",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"一條　真恵",no:"011069",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"宮下　勉",no:"011074",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"本田　純子",no:"011102",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"石川　那津貴",no:"011216",kubun:"エース",start:"08:30",end:"17:30",brk:60}
+    ],
+    "泉野":[
+      {name:"橋場　竜之介",no:"010049",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"山本　寛子",no:"010061",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"髙橋　幸代",no:"010097",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"堀　佐恵子",no:"",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"伊藤　美千代",no:"011066",kubun:"エース",start:"10:00",end:"15:00",brk:0},
+      {name:"古川　圭一郎",no:"011080",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"米澤　淳子",no:"011061",kubun:"エース",start:"10:00",end:"16:00",brk:60},
+      {name:"直江　静香",no:"011056",kubun:"エース",start:"09:30",end:"17:30",brk:60},
+      {name:"二井　万柚子",no:"011111",kubun:"エース",start:"08:30",end:"17:00",brk:60},
+      {name:"桑山　直樹",no:"011088",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"荒木　知子",no:"011144",kubun:"エース",start:"11:45",end:"16:45",brk:0},
+      {name:"園田　一秋",no:"011171",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"口田　富美代",no:"011198",kubun:"エース",start:"09:30",end:"12:30",brk:0},
+      {name:"池野　委久実",no:"011200",kubun:"エース",start:"08:30",end:"17:00",brk:60}
+    ],
+    "婦中":[
+      {name:"角　健太郎",no:"010099",kubun:"社員",start:"08:00",end:"17:00",brk:60},
+      {name:"示野　賀子",no:"010101",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"中川　裕美",no:"010109",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"佐藤　寛",no:"011145",kubun:"エース",start:"08:00",end:"16:30",brk:60},
+      {name:"井上　典子",no:"011146",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"藤重　美樹",no:"011147",kubun:"エース",start:"08:30",end:"13:00",brk:0},
+      {name:"堀田　愛",no:"011152",kubun:"エース",start:"08:30",end:"13:00",brk:0},
+      {name:"桑名　剛",no:"011211",kubun:"エース",start:"08:00",end:"09:00",brk:0},
+      {name:"水上　繁",no:"011154",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"磨伊　宏",no:"",kubun:"社員",start:"13:30",end:"16:30",brk:0},
+      {name:"名村　和江",no:"010082",kubun:"社員",start:"08:30",end:"17:30",brk:60}
+    ],
+    "立山":[
+      {name:"久呂　美奈",no:"10100",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"佐伯　直美",no:"10090",kubun:"社員",start:"08:00",end:"17:00",brk:60},
+      {name:"西村  美保",no:"10117",kubun:"社員",start:"13:00",end:"17:00",brk:0},
+      {name:"東　由紀子",no:"11158",kubun:"エース",start:"09:00",end:"13:00",brk:0},
+      {name:"大堀　恭子",no:"11157",kubun:"エース",start:"09:00",end:"17:00",brk:60},
+      {name:"牧野　浩子",no:"11148",kubun:"エース",start:"09:00",end:"13:30",brk:0},
+      {name:"村上　愛美",no:"11161",kubun:"エース",start:"13:30",end:"17:30",brk:0},
+      {name:"金山　隆悦",no:"11156",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"橋本　節子",no:"11160",kubun:"エース",start:"09:00",end:"13:30",brk:0},
+      {name:"飯田　健一",no:"11164",kubun:"エース",start:"08:00",end:"17:30",brk:330},
+      {name:"清水　節子",no:"11165",kubun:"エース",start:"08:00",end:"17:15",brk:315},
+      {name:"中島　雅人",no:"11162",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"堀田 麻緒",no:"",kubun:"エース",start:"13:30",end:"15:00",brk:0}
+    ],
+    "富樫":[
+      {name:"石田　修也",no:"010031",kubun:"社員",start:"08:15",end:"17:15",brk:60},
+      {name:"金谷　一輝",no:"010066",kubun:"社員",start:"08:00",end:"17:00",brk:60},
+      {name:"徳田　紀子",no:"010120",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"坂　政枝",no:"010095",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"蜂須賀　恵",no:"010096",kubun:"社員",start:"08:15",end:"17:15",brk:60},
+      {name:"杭田　直美",no:"010094",kubun:"社員",start:"08:15",end:"17:15",brk:60},
+      {name:"濱田　裕美子",no:"010098",kubun:"社員",start:"08:00",end:"17:00",brk:60},
+      {name:"常少　美奈",no:"010108",kubun:"社員",start:"08:15",end:"17:15",brk:60},
+      {name:"古川　聡美",no:"011125",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"原　知世",no:"011126",kubun:"エース",start:"10:00",end:"17:00",brk:60},
+      {name:"丸山　邦子",no:"011194",kubun:"エース",start:"09:00",end:"12:00",brk:0},
+      {name:"大家　成美",no:"011214",kubun:"エース",start:"09:00",end:"15:00",brk:60},
+      {name:"山田　英里",no:"011219",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"近澤　由紀子",no:"011178",kubun:"エース",start:"09:00",end:"14:45",brk:0},
+      {name:"薮下　洋子",no:"011191",kubun:"エース",start:"08:30",end:"17:30",brk:60}
+    ]
+  };
+  // ▲
+  // 系列（法人）→店舗 の2段構成。※実データはGoogleシートのrostersタブから取得。
+  // 下記は取得失敗時のフォールバック（オフライン等）。
+  var FALLBACK_GROUPS={ "寿リハ":ROSTERS, "AIM":{} };
+  var GROUPS=FALLBACK_GROUPS;
+  var brand="";          // 現在選択中の系列
+  var store="";          // 現在選択中の店舗
+  var ROSTER=[];         // 現在店舗の名簿
+  var PUBLIC=["法定","法外"], PAID=["特休","有休","夏冬誕"];
+  var state={ ym:{y:2026,m:8}, staff:{name:"",branch:"",employeeNo:""},
+    std:{start:"08:30",end:"17:30",brk:60}, days:{}, submitted:false, target:null };
+  var editKey=null, mType="出勤";
+
+  function ym(){ return state.ym.y+"-"+String(state.ym.m).padStart(2,"0"); }
+  function dkey(d){ return ym()+"-"+String(d).padStart(2,"0"); }
+  function daysInMonth(){ return new Date(state.ym.y,state.ym.m,0).getDate(); }
+  function wdOf(d){ return new Date(state.ym.y,state.ym.m-1,d).getDay(); }
+  function skey(){ return "kibou_"+store+"_"+state.staff.name+"_"+ym(); }
+  function save(){ try{localStorage.setItem(skey(),JSON.stringify(state));}catch(e){} }
+  function load(){ try{var r=localStorage.getItem(skey());if(r){var o=JSON.parse(r);state.days=o.days||{};state.submitted=!!o.submitted;state.target=(o.target!=null?o.target:null);}}catch(e){} }
+  function esc(s){return(s+"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+  function catClass(v){ if(!v)return""; if(v.type==="出勤")return"work"; return PUBLIC.indexOf(v.leave)>=0?"public":"paid"; }
+  function label(v){ if(!v)return""; if(v.type==="出勤"){ return (v.start&&v.end)?(v.start+"–"+v.end):"出勤"; } return v.leave||"休み"; }
+
+  // 既定値：土=法外・日=法定・平日=標準勤務
+  function defaultFor(d){
+    var wd=wdOf(d);
+    if(wd===0) return {type:"休み",leave:"法定",note:""};
+    if(wd===6) return {type:"休み",leave:"法外",note:""};
+    return {type:"出勤",start:state.std.start,end:state.std.end,brk:state.std.brk,note:""};
+  }
+  function effFor(d){ return state.days[dkey(d)] || defaultFor(d); }
+
+  function render(){
+    document.getElementById("monthLabel").textContent=state.ym.y+"年"+String(state.ym.m).padStart(2,"0")+"月";
+    var sl=document.getElementById("staffLine");
+    sl.textContent=state.staff.name?((state.staff.branch?state.staff.branch+"／":"")+state.staff.name+" さん"):"氏名・店舗を入力してください";
+    var b=document.getElementById("statusBadge");
+    if(state.submitted){b.className="badge yes";b.textContent="申請済";}else{b.className="badge no";b.textContent="未申請";}
+    // 公休（法定+法外）・有休等・土日数をカウント
+    var kokyu=0, yukyu=0, weekendBase=0;
+    for(var dd=1;dd<=daysInMonth();dd++){
+      var wdd=wdOf(dd); if(wdd===0||wdd===6)weekendBase++;
+      var ev=effFor(dd);
+      if(ev.type==="休み"){ if(ev.leave==="法定"||ev.leave==="法外")kokyu++; else yukyu++; }
+    }
+    // 目標：管理者がシートに設定した値（TARGETS[ym]）があればそれ、無ければ土日数（自動）
+    // 目標：店名一致 → 系列名一致（寿リハ/AIM等・全店共通） → 無ければ土日数（自動）
+    function tgtFor(m){
+      if(store && TARGETS[store+"|"+m]!=null) return {v:TARGETS[store+"|"+m],src:"管理設定"};
+      if(brand && TARGETS[brand+"|"+m]!=null) return {v:TARGETS[brand+"|"+m],src:"系列設定"};
+      return null;
+    }
+    var tg=tgtFor(ym());
+    var mgr=tg?tg.v:null;
+    var target=(mgr!=null)?mgr:weekendBase;
+    var srcTxt=(mgr!=null)?tg.src:"自動(土日)";
+    document.getElementById("targetView").innerHTML=target+' 日 <span style="font-size:11px;color:var(--muted);font-weight:400;">'+srcTxt+'</span>';
+    var diff=kokyu-target;
+    var diffTxt = diff===0?'<span style="color:var(--ok);">±0</span>':'<span style="color:var(--warn);">'+(diff>0?'+':'')+diff+'</span>';
+    document.getElementById("restBox").innerHTML='公休 <b>'+kokyu+'</b>日 '+diffTxt+'　/　有休等 '+yukyu+'日';
+    var list=document.getElementById("dayList"); list.innerHTML="";
+    list.style.setProperty("--half", Math.ceil(daysInMonth()/2));
+    for(var d=1;d<=daysInMonth();d++){(function(d){
+      var wd=wdOf(d), explicit=!!state.days[dkey(d)], v=effFor(d);
+      var row=document.createElement("div");
+      row.className="day"+(wd===0?" sun":wd===6?" sat":"")+(explicit?" req":"");
+      var mainCls="main v-"+catClass(v)+(explicit?"":" dim");
+      var tag=explicit?'<span class="reqtag">希望</span>':'';
+      var main='<div class="'+mainCls+'">'+esc(label(v))+tag+'</div>';
+      var note=(v&&v.note)?'<div class="note">'+esc(v.note)+'</div>':'';
+      row.innerHTML='<div class="dcol"><div class="num">'+d+'</div><div class="wd">'+WD[wd]+'</div></div><div class="val">'+main+note+'</div>';
+      row.onclick=function(){openModal(d);};
+      list.appendChild(row);
+    })(d);}
+  }
+
+  function openModal(d){
+    editKey=dkey(d);
+    var v=effFor(d);
+    document.getElementById("modalTitle").textContent=state.ym.m+"/"+d+"("+WD[wdOf(d)]+")";
+    mType=v.type;
+    if(v.type==="出勤"){
+      document.getElementById("wStart").value=v.start||state.std.start;
+      document.getElementById("wEnd").value=v.end||state.std.end;
+      document.getElementById("wBreak").value=(v.brk!=null?v.brk:state.std.brk);
+    }else{
+      document.getElementById("wStart").value=state.std.start;
+      document.getElementById("wEnd").value=state.std.end;
+      document.getElementById("wBreak").value=state.std.brk;
+    }
+    document.getElementById("leaveSel").value=(v.type==="休み"&&v.leave)?v.leave:"";
+    document.getElementById("noteInput").value=v.note||"";
+    paint();
+    document.getElementById("overlay").classList.add("on");
+  }
+  function paint(){
+    document.getElementById("btnWork").className=mType==="出勤"?"act-work":"";
+    document.getElementById("btnRest").className=mType==="休み"?"act-rest":"";
+    document.getElementById("workWrap").style.display=mType==="出勤"?"block":"none";
+    document.getElementById("restWrap").style.display=mType==="休み"?"block":"none";
+  }
+  function closeModal(){document.getElementById("overlay").classList.remove("on");editKey=null;}
+
+  document.getElementById("btnWork").onclick=function(){mType="出勤";paint();};
+  document.getElementById("btnRest").onclick=function(){mType="休み";paint();};
+  document.getElementById("modalClose").onclick=closeModal;
+  document.getElementById("modalCancel").onclick=closeModal;
+  document.getElementById("overlay").onclick=function(e){if(e.target===this)closeModal();};
+
+  // presets
+  Array.prototype.forEach.call(document.querySelectorAll('.presets button'),function(btn){
+    btn.onclick=function(){
+      var p=btn.getAttribute('data-preset');
+      if(p==='std'){document.getElementById("wStart").value=state.std.start;document.getElementById("wEnd").value=state.std.end;document.getElementById("wBreak").value=state.std.brk;}
+      if(p==='am'){document.getElementById("wStart").value=state.std.start;document.getElementById("wEnd").value="12:00";document.getElementById("wBreak").value=0;}
+      if(p==='pm'){document.getElementById("wStart").value="13:00";document.getElementById("wEnd").value=state.std.end;document.getElementById("wBreak").value=0;}
+    };
+  });
+
+  document.getElementById("modalSave").onclick=function(){
+    if(!editKey)return;
+    var note=document.getElementById("noteInput").value.trim();
+    if(mType==="出勤"){
+      var s=document.getElementById("wStart").value,e=document.getElementById("wEnd").value;
+      var br=parseInt(document.getElementById("wBreak").value,10); if(isNaN(br))br=0;
+      if(!s||!e){toast("開始・終了を入力してください");return;}
+      state.days[editKey]={type:"出勤",start:s,end:e,brk:br,note:note};
+    }else{
+      var lv=document.getElementById("leaveSel").value;
+      if(!lv){toast("休みの種別を選んでください");return;}
+      state.days[editKey]={type:"休み",leave:lv,note:note};
+    }
+    state.submitted=false; save(); render(); closeModal(); toast("保存しました");
+  };
+  document.getElementById("modalClear").onclick=function(){
+    if(editKey){delete state.days[editKey];state.submitted=false;save();render();closeModal();toast("クリアしました");}
+  };
+
+  document.getElementById("prevM").onclick=function(){shift(-1);};
+  document.getElementById("nextM").onclick=function(){shift(1);};
+  function shift(n){var m=state.ym.m+n,y=state.ym.y;if(m<1){m=12;y--;}if(m>12){m=1;y++;}state.ym={y:y,m:m};state.days={};state.submitted=false;state.target=null;var t=document.getElementById("kokyuTarget");if(t)t.value="";load();render();}
+
+  function normName(s){ return (s||"").replace(/[ 　]/g,""); }
+  function buildBrands(){
+    var sel=document.getElementById("brandSelect"); sel.innerHTML="";
+    var o0=document.createElement("option"); o0.value=""; o0.textContent="▼ 系列を選択"; sel.appendChild(o0);
+    Object.keys(GROUPS).forEach(function(b){
+      var o=document.createElement("option"); o.value=b; o.textContent=b; sel.appendChild(o);
+    });
+    sel.onchange=function(){
+      brand=this.value; store=""; ROSTER=[];
+      state.staff={name:"",branch:"",employeeNo:""};
+      buildStores(); buildRoster();
+      document.getElementById("manualBox").classList.remove("on");
+      document.getElementById("selInfo").innerHTML= brand?"店舗を選んでください":"系列と店舗を選んでください";
+      render();
+    };
+  }
+  function buildStores(){
+    var sel=document.getElementById("storeSelect"); sel.innerHTML="";
+    var stores=(brand&&GROUPS[brand])?Object.keys(GROUPS[brand]):[];
+    var o0=document.createElement("option"); o0.value=""; o0.textContent= brand?(stores.length?"▼ 店舗を選択":"（店舗未登録）"):"（先に系列を選択）"; sel.appendChild(o0);
+    stores.forEach(function(st){ var o=document.createElement("option"); o.value=st; o.textContent=st; sel.appendChild(o); });
+    sel.onchange=function(){
+      store=this.value; ROSTER=(GROUPS[brand]&&GROUPS[brand][store])?GROUPS[brand][store]:[];
+      state.staff={name:"",branch:store,employeeNo:""};
+      document.getElementById("manualBox").classList.remove("on");
+      buildRoster();
+      document.getElementById("selInfo").innerHTML= store?"名前を選んでください":"店舗と名前を選んでください";
+      render();
+    };
+  }
+  function buildRoster(){
+    var sel=document.getElementById("nameSelect"); sel.innerHTML="";
+    var o0=document.createElement("option"); o0.value=""; o0.textContent= store?"▼ 名前を選択":"（先に店舗を選択）"; sel.appendChild(o0);
+    ROSTER.forEach(function(p,i){
+      var o=document.createElement("option"); o.value=String(i); o.textContent=p.name.replace("　"," "); sel.appendChild(o);
+    });
+    if(store){ var oo=document.createElement("option"); oo.value="other"; oo.textContent="その他（手入力）"; sel.appendChild(oo); }
+    sel.onchange=function(){
+      var v=this.value;
+      if(v===""){ state.staff={name:"",branch:store,employeeNo:""}; document.getElementById("manualBox").classList.remove("on");
+        document.getElementById("selInfo").innerHTML="名前を選んでください"; save(); render(); return; }
+      if(v==="other"){ selectOther(); return; }
+      selectPerson(+v);
+    };
+  }
+  function setSelectValue(v){ var sel=document.getElementById("nameSelect"); if(sel) sel.value=String(v); }
+  function applyStdInputs(){
+    document.getElementById("stdStart").value=state.std.start;
+    document.getElementById("stdEnd").value=state.std.end;
+    document.getElementById("stdBreak").value=state.std.brk;
+  }
+  function selectPerson(i){
+    var p=ROSTER[i];
+    state.staff={name:p.name,branch:store,employeeNo:p.no};
+    state.std={start:p.start,end:p.end,brk:p.brk};
+    document.getElementById("manualBox").classList.remove("on");
+    document.getElementById("selInfo").innerHTML='選択中：<b>'+p.name.replace("　"," ")+'</b>（社員番号 '+p.no+'／'+p.kubun+'）';
+    setSelectValue(i); applyStdInputs(); save(); render();
+  }
+  function selectOther(){
+    state.staff={name:"",branch:store,employeeNo:""};
+    document.getElementById("manualBox").classList.add("on");
+    document.getElementById("selInfo").innerHTML='その他：氏名と社員番号を入力してください';
+    setSelectValue("other");
+    document.getElementById("mName").value=""; document.getElementById("mNo").value="";
+    save();
+  }
+  function selectByStaff(st){
+    if(!st) return false;
+    if(st.branch){
+      Object.keys(GROUPS).forEach(function(b){ if(GROUPS[b][st.branch]){ brand=b; } });
+      if(brand&&GROUPS[brand]&&GROUPS[brand][st.branch]){
+        store=st.branch; ROSTER=GROUPS[brand][store];
+        var bs=document.getElementById("brandSelect"); if(bs)bs.value=brand; buildStores();
+        var ss=document.getElementById("storeSelect"); if(ss)ss.value=store; buildRoster();
+      }
+    }
+    for(var i=0;i<ROSTER.length;i++){
+      if((st.employeeNo && ROSTER[i].no===st.employeeNo) || (st.name && normName(ROSTER[i].name)===normName(st.name))){
+        selectPerson(i); return true;
+      }
+    }
+    selectOther();
+    document.getElementById("mName").value=st.name||"";
+    document.getElementById("mNo").value=st.employeeNo||"";
+    state.staff={name:st.name||"",branch:store,employeeNo:st.employeeNo||""};
+    return false;
+  }
+
+  function bindStd(){
+    buildBrands(); buildStores();
+    document.getElementById("mName").oninput=function(){state.staff.name=this.value.trim();render();save();};
+    document.getElementById("mNo").oninput=function(){state.staff.employeeNo=this.value.trim();save();};
+    document.getElementById("stdStart").onchange=function(){state.std.start=this.value;save();};
+    document.getElementById("stdEnd").onchange=function(){state.std.end=this.value;save();};
+    document.getElementById("stdBreak").onchange=function(){state.std.brk=parseInt(this.value,10)||0;save();};
+  }
+
+  function buildOut(){
+    var out={version:"0.8",staff:{name:state.staff.name,branch:state.staff.branch,employeeNo:state.staff.employeeNo},
+      month:ym(),standard:{start:state.std.start,end:state.std.end,"break":state.std.brk},kokyuTarget:(function(){var m=ym();if(store&&TARGETS[store+"|"+m]!=null)return TARGETS[store+"|"+m];if(brand&&TARGETS[brand+"|"+m]!=null)return TARGETS[brand+"|"+m];return null;})(),days:{}};
+    for(var d=1;d<=daysInMonth();d++){
+      var k=dkey(d), v=state.days[k]||defaultFor(d);
+      out.days[k]= v.type==="出勤" ? {type:"出勤",start:v.start,end:v.end,"break":(v.brk!=null?v.brk:state.std.brk),note:v.note||""}
+                                   : {type:"休み",leave:v.leave,note:v.note||""};
+    }
+    return out;
+  }
+  function saveFile(out){
+    var blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url; a.download=(ym()+"_"+(state.staff.branch||"")+"_"+state.staff.name+".json").replace(/\s+/g,""); a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+  // 送信（Googleシートへ）。URL未設定ならファイル保存にフォールバック
+  document.getElementById("submitBtn").onclick=function(){
+    if(!state.staff.name){toast("名前を選んでください");return;}
+    var out=buildOut();
+    if(!SUBMIT_URL){ saveFile(out); state.submitted=true; save(); render(); toast("URL未設定→ファイル保存しました"); return; }
+    if(TOKEN) out.token=TOKEN;
+    var btn=document.getElementById("submitBtn"); btn.disabled=true; btn.textContent="送信中…";
+    fetch(SUBMIT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(out)})
+      .then(function(){ state.submitted=true; save(); render(); toast("送信しました。お疲れさまでした"); })
+      .catch(function(){ toast("送信できませんでした。ファイル保存で送ってください"); saveFile(out); })
+      .finally(function(){ btn.disabled=false; btn.textContent="送信する"; });
+  };
+  // 保存（常にファイル書き出し・バックアップ用）
+  document.getElementById("saveBtn").onclick=function(){
+    if(!state.staff.name){toast("名前を選んでください");return;}
+    saveFile(buildOut()); toast("ファイルに保存しました");
+  };
+
+  document.getElementById("importBtn").onclick=function(){document.getElementById("fileInput").click();};
+  function readFile(f){var rd=new FileReader();rd.onload=function(){try{
+    var o=JSON.parse(rd.result);
+    if(o.month){var p=o.month.split("-");state.ym={y:+p[0],m:+p[1]};}
+    if(o.staff){state.staff={name:o.staff.name||"",branch:o.staff.branch||"",employeeNo:o.staff.employeeNo||""};}
+    if(o.standard){state.std={start:o.standard.start||"08:30",end:o.standard.end||"17:30",brk:(o.standard["break"]!=null?o.standard["break"]:60)};}
+    state.days={};
+    Object.keys(o.days||{}).forEach(function(k){var v=o.days[k];
+      state.days[k]= v.type==="出勤"?{type:"出勤",start:v.start,end:v.end,brk:v["break"],note:v.note||""}:{type:"休み",leave:v.leave,note:v.note||""};});
+    state.submitted=!!o.submitted;
+    if(o.staff) selectByStaff(o.staff);
+    applyStdInputs();
+    save();render();toast("読み込みました");
+  }catch(err){toast("ファイルを読めませんでした");}};rd.readAsText(f);}
+  document.getElementById("fileInput").onchange=function(e){var f=e.target.files[0];if(f)readFile(f);e.target.value="";};
+  ["dragover","drop"].forEach(function(ev){document.body.addEventListener(ev,function(e){e.preventDefault();});});
+  document.body.addEventListener("drop",function(e){var f=e.dataTransfer.files[0];if(f)readFile(f);});
+
+  var tt; function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on");},1800);}
+
+  // 管理者設定の公休目標をシートから取得（読み取り専用）
+  function fetchTargets(){
+    if(!SUBMIT_URL) return;
+    var cb="__tgt"+Date.now();
+    var s=document.createElement("script");
+    window[cb]=function(list){
+      try{ delete window[cb]; }catch(e){}
+      s.remove();
+      if(Array.isArray(list)){
+        list.forEach(function(row){
+          if(row && row.branch && row.month && row.target!=null && row.target!==""){
+            TARGETS[String(row.branch)+"|"+String(row.month)]=parseInt(row.target,10);
+          }
+        });
+        render();
+      }
+    };
+    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove(); };
+    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=targets&callback="+cb;
+    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
+    s.src=q; document.body.appendChild(s);
+  }
+
+  // 名簿をGoogleシート(rostersタブ)から取得して GROUPS を組み立てる
+  function fetchRosters(){
+    if(!SUBMIT_URL) return;
+    var cb="__ros"+Date.now();
+    var s=document.createElement("script");
+    window[cb]=function(list){
+      try{ delete window[cb]; }catch(e){}
+      s.remove();
+      if(Array.isArray(list) && list.length){
+        var g={};
+        list.forEach(function(r){
+          if(!r.store || !r.name) return;
+          var grp=r.group||"寿リハ";
+          g[grp]=g[grp]||{}; g[grp][r.store]=g[grp][r.store]||[];
+          g[grp][r.store].push({name:r.name,no:r.no||"",kubun:r.kubun||"社員",
+            start:r.start||"08:30",end:r.end||"17:30",brk:(r.brk!=null?parseInt(r.brk,10):60)});
+        });
+        if(Object.keys(g).length){ GROUPS=g; buildBrands(); buildStores(); buildRoster(); }
+      }
+    };
+    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove(); };
+    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=rosters&callback="+cb;
+    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
+    s.src=q; document.body.appendChild(s);
+  }
+
+  bindStd(); load(); render(); fetchTargets(); fetchRosters();
+})();
+</script>
+</body>
+</html>
