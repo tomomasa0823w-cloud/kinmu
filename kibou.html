@@ -116,7 +116,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.4</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.5</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
   </header>
 
@@ -374,12 +374,14 @@
   function label(v){ if(!v)return""; if(v.type==="出勤"){ return (v.start&&v.end)?(v.start+"–"+v.end):"出勤"; } return v.leave||"休み"; }
 
   // 既定値：土=法外・日=法定・平日=標準勤務
+  // 土日休みが既定の系列（オフィス系）。ここに無い系列(AIM等)は「全日出勤が既定・各自マーク」
+  var WEEKEND_OFF_GROUPS=["寿リハ","トレーディング"];
   function defaultFor(d){
-    // AIM(スカイシップ等)は土日営業・公休が人によりバラバラ → 既定は全日出勤、休みは各自マーク
-    if(brand && brand!=="寿リハ"){
+    if(brand && WEEKEND_OFF_GROUPS.indexOf(brand)<0){
+      // AIM(スカイシップ等)：土日営業・公休バラバラ → 既定は全日出勤
       return {type:"出勤",start:state.std.start,end:state.std.end,brk:state.std.brk,note:""};
     }
-    // 寿リハ：土=法外・日=法定・平日=標準勤務
+    // 寿リハ・トレーディング：土=法外・日=法定・平日=標準勤務
     var wd=wdOf(d);
     if(wd===0) return {type:"休み",leave:"法定",note:""};
     if(wd===6) return {type:"休み",leave:"法外",note:""};
