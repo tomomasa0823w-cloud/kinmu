@@ -116,7 +116,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.5</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.6</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
   </header>
 
@@ -221,18 +221,20 @@
   // ▼ 店舗別の名簿。他店はここに追記していく ▼
   var ROSTERS={
     "額":[
-      {name:"川口　智正",no:"010114",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"木下　千春",no:"010077",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"大和田　理楠",no:"010055",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"金沢　真悠",no:"010043",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"下農　香",no:"010116",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"松井　大輔",no:"010122",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"斉藤　幸重",no:"011119",kubun:"エース",start:"08:30",end:"16:30",brk:60},
       {name:"池端　瞳",no:"011179",kubun:"エース",start:"09:00",end:"14:00",brk:0},
       {name:"高野　美智代",no:"011182",kubun:"エース",start:"08:15",end:"16:30",brk:60},
       {name:"小池　綾子",no:"011195",kubun:"エース",start:"08:15",end:"13:15",brk:150},
+      {name:"畑　のぞみ",no:"011221",kubun:"エース",start:"09:15",end:"15:15",brk:60},
       {name:"中坂　新一",no:"011181",kubun:"エース",start:"08:30",end:"17:30",brk:60}
     ],
     "神宮寺":[
+      {name:"川口　智正",no:"010114",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"宮﨑　亜紗美",no:"010005",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"楢原　玲央也",no:"010029",kubun:"社員",start:"10:00",end:"19:00",brk:60},
       {name:"名村　和江",no:"010082",kubun:"社員",start:"08:30",end:"17:30",brk:60},
@@ -257,13 +259,13 @@
       {name:"辻　茉希",no:"010121",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"中屋　朋子",no:"011063",kubun:"エース",start:"08:30",end:"17:30",brk:60},
       {name:"浅井　真樹",no:"011190",kubun:"エース",start:"10:00",end:"15:00",brk:45},
-      {name:"中保　はるな",no:"011215",kubun:"エース",start:"09:30",end:"17:00",brk:60}
+      {name:"中保　はるな",no:"011215",kubun:"エース",start:"09:30",end:"17:00",brk:60},
+      {name:"花田　絵梨",no:"011222",kubun:"エース",start:"08:30",end:"17:30",brk:60}
     ],
     "小立野":[
       {name:"磨伊　宏",no:"010016",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"玉谷　三千代",no:"010024",kubun:"社員",start:"08:30",end:"17:30",brk:60},
       {name:"中嶋　美江子",no:"010112",kubun:"社員",start:"08:30",end:"17:30",brk:60},
-      {name:"畑　のぞみ",no:"010033",kubun:"社員",start:"09:15",end:"15:15",brk:60},
       {name:"大沢　敬子",no:"011008",kubun:"エース",start:"08:30",end:"17:30",brk:60},
       {name:"白石　美千代",no:"011015",kubun:"エース",start:"10:00",end:"14:30",brk:0},
       {name:"寺田　はるか",no:"011048",kubun:"エース",start:"09:00",end:"14:30",brk:60},
@@ -330,6 +332,32 @@
       {name:"中島　雅人",no:"11162",kubun:"エース",start:"08:30",end:"17:30",brk:60},
       {name:"堀田 麻緒",no:"",kubun:"エース",start:"13:30",end:"15:00",brk:0}
     ],
+    "松任":[
+      {name:"南野　和哉",no:"010020",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"瀧田　美咲",no:"010018",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"伊藤　由乃",no:"010113",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"和田　亜希子",no:"010118",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"新谷　由香",no:"011096",kubun:"エース",start:"09:00",end:"16:30",brk:60},
+      {name:"南　真理子",no:"011109",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"岡本　小百合",no:"011110",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"南山　香",no:"011184",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"高森　来厘",no:"011201",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"加瀬　愛美",no:"011101",kubun:"エース",start:"09:00",end:"16:00",brk:45},
+      {name:"入江　綾乃",no:"011176",kubun:"エース",start:"09:00",end:"14:00",brk:0},
+      {name:"成村　美幸",no:"011113",kubun:"エース",start:"08:00",end:"13:15",brk:165},
+      {name:"宮西　昭一",no:"011168",kubun:"エース",start:"11:45",end:"17:00",brk:165},
+      {name:"新谷　康則",no:"011218",kubun:"エース",start:"08:00",end:"17:00",brk:420}
+    ],
+    "本社":[
+      {name:"山田　麻央",no:"010081",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"岩本　知枝",no:"010104",kubun:"社員",start:"09:00",end:"16:00",brk:60},
+      {name:"河村　倫空",no:"011213",kubun:"エース",start:"16:15",end:"18:45",brk:0},
+      {name:"相古　和裕",no:"011114",kubun:"エース",start:"16:15",end:"18:45",brk:0},
+      {name:"塚越　龍生",no:"011115",kubun:"エース",start:"16:30",end:"19:00",brk:0},
+      {name:"木戸　毅",no:"011116",kubun:"エース",start:"16:15",end:"18:45",brk:0},
+      {name:"石井　大智",no:"011189",kubun:"エース",start:"16:30",end:"19:00",brk:0},
+      {name:"飯田　朗允",no:"011192",kubun:"エース",start:"16:15",end:"19:00",brk:0}
+    ],
     "富樫":[
       {name:"石田　修也",no:"010031",kubun:"社員",start:"08:15",end:"17:15",brk:60},
       {name:"金谷　一輝",no:"010066",kubun:"社員",start:"08:00",end:"17:00",brk:60},
@@ -345,7 +373,19 @@
       {name:"大家　成美",no:"011214",kubun:"エース",start:"09:00",end:"15:00",brk:60},
       {name:"山田　英里",no:"011219",kubun:"エース",start:"08:30",end:"17:30",brk:60},
       {name:"近澤　由紀子",no:"011178",kubun:"エース",start:"09:00",end:"14:45",brk:0},
-      {name:"薮下　洋子",no:"011191",kubun:"エース",start:"08:30",end:"17:30",brk:60}
+      {name:"薮下　洋子",no:"011191",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"小泉　三郎",no:"011127",kubun:"エース",start:"07:45",end:"17:30",brk:345},
+      {name:"高山　満博",no:"011128",kubun:"エース",start:"07:45",end:"17:30",brk:345},
+      {name:"新山　孝司",no:"011129",kubun:"エース",start:"07:45",end:"09:45",brk:0},
+      {name:"野村　育生",no:"011131",kubun:"エース",start:"07:45",end:"17:30",brk:345},
+      {name:"下野　博樹",no:"011134",kubun:"エース",start:"07:45",end:"17:30",brk:345},
+      {name:"諸江　都",no:"010092",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"渡辺　沙紀",no:"010084",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"山本　朋子",no:"010103",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"越川　裕美子",no:"011130",kubun:"エース",start:"10:00",end:"14:30",brk:30},
+      {name:"今野　よしみ",no:"011139",kubun:"エース",start:"10:00",end:"14:30",brk:30},
+      {name:"町　恵子",no:"011137",kubun:"エース",start:"10:00",end:"14:30",brk:30},
+      {name:"大河　芳実",no:"011138",kubun:"エース",start:"10:00",end:"14:30",brk:30}
     ]
   };
   // ▲
@@ -374,14 +414,12 @@
   function label(v){ if(!v)return""; if(v.type==="出勤"){ return (v.start&&v.end)?(v.start+"–"+v.end):"出勤"; } return v.leave||"休み"; }
 
   // 既定値：土=法外・日=法定・平日=標準勤務
-  // 土日休みが既定の系列（オフィス系）。ここに無い系列(AIM等)は「全日出勤が既定・各自マーク」
-  var WEEKEND_OFF_GROUPS=["寿リハ","トレーディング"];
   function defaultFor(d){
-    if(brand && WEEKEND_OFF_GROUPS.indexOf(brand)<0){
-      // AIM(スカイシップ等)：土日営業・公休バラバラ → 既定は全日出勤
+    // AIM(スカイシップ等)は土日営業・公休が人によりバラバラ → 既定は全日出勤、休みは各自マーク
+    if(brand && brand!=="寿リハ"){
       return {type:"出勤",start:state.std.start,end:state.std.end,brk:state.std.brk,note:""};
     }
-    // 寿リハ・トレーディング：土=法外・日=法定・平日=標準勤務
+    // 寿リハ：土=法外・日=法定・平日=標準勤務
     var wd=wdOf(d);
     if(wd===0) return {type:"休み",leave:"法定",note:""};
     if(wd===6) return {type:"休み",leave:"法外",note:""};
