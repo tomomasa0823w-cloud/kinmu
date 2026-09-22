@@ -126,7 +126,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.7</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.8</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
   </header>
 
@@ -209,7 +209,7 @@
     <div class="seclabel">休みの種別</div>
     <select id="leaveSel" class="leave">
       <option value="">選択してください</option>
-      <option value="法定">法定（法定休日）</option>
+      <option value="法定" id="optHotei">法定（法定休日・日曜のみ）</option>
       <option value="法外">法外（法定外休日）</option>
       <option value="特休">特休</option>
       <option value="有休">有休</option>
@@ -550,7 +550,11 @@
       document.getElementById("wEnd").value=state.std.end;
       document.getElementById("wBreak").value=state.std.brk;
     }
-    document.getElementById("leaveSel").value=(v.type==="休み"&&v.leave)?v.leave:"";
+    var oh=document.getElementById("optHotei"), isSun=(wdOf(d)===0);
+    oh.hidden=!isSun; oh.disabled=!isSun;   // 法定は日曜のみ選択可
+    var lv=(v.type==="休み"&&v.leave)?v.leave:"";
+    if(lv==="法定" && !isSun) lv="法外";       // 日曜以外に残っていた法定は法外扱いで表示
+    document.getElementById("leaveSel").value=lv;
     document.getElementById("noteInput").value=v.note||"";
     paint();
     document.getElementById("overlay").classList.add("on");

@@ -53,7 +53,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>勤務表反映ツール<span class="ver">v1.1</span></h1>
+    <h1>勤務表反映ツール<span class="ver">v1.2</span></h1>
     <p>店舗テンプレを保存 → 月を選ぶだけ → シートの希望を反映して保存</p>
   </header>
 
@@ -200,6 +200,8 @@ def reflect(xlsx_bytes, requests, roster, target_month=None):
                 else: report['flags'].append(f"{rec['name']} {dk}: 時刻未入力")
             else:
                 cat=dv.get('leave')
+                if cat=='法定' and dd.weekday()!=6:   # 法定休日は日曜のみ。日曜以外は法外に自動補正
+                    cat='法外'; report['flags'].append(f"{rec['name']} {dk}: 法定→法外(日曜以外)")
                 if cat=='有休': code=5 if kub=='エース' else 4
                 elif cat in LEAVE: code=LEAVE[cat]
                 else: report['flags'].append(f"{rec['name']} {dk}: 種別不明({cat})"); continue
