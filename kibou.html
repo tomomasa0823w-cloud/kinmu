@@ -126,7 +126,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.8</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.9</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
   </header>
 
@@ -409,9 +409,32 @@
     ]
   };
   // ▲
+  // トレーディング（社員2・エース4・利用者12＝計18名）
+  var TRADING={
+    "トレーディング":[
+      {name:"横井　大輔",no:"020010",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"奥山　百合江",no:"020011",kubun:"社員",start:"08:30",end:"17:30",brk:60},
+      {name:"岡本　沙織",no:"021001",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"吉田　宏之",no:"021002",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"前田　浩和",no:"021003",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"村先　美月",no:"021004",kubun:"エース",start:"08:30",end:"17:30",brk:60},
+      {name:"前田　景一",no:"022002",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"荒江　克治",no:"022003",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"藤江　充",no:"022004",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"奥村　雅裕",no:"022005",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"坂下　雅規",no:"022007",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"青木　智之",no:"022010",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"中田　麻莉愛",no:"022011",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"又木　可奈子",no:"022012",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"宅間　将貴",no:"022013",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"森田　善美",no:"022014",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"宮本　卓",no:"022015",kubun:"利用者",start:"08:30",end:"17:30",brk:60},
+      {name:"石田　勝",no:"022016",kubun:"利用者",start:"08:30",end:"17:30",brk:60}
+    ]
+  };
   // 系列（法人）→店舗 の2段構成。※実データはGoogleシートのrostersタブから取得。
   // 下記は取得失敗時のフォールバック（オフライン等）。
-  var FALLBACK_GROUPS={ "寿リハ":ROSTERS, "AIM":{} };
+  var FALLBACK_GROUPS={ "寿リハ":ROSTERS, "AIM":{}, "トレーディング":TRADING };
   var GROUPS=FALLBACK_GROUPS;
   var brand="";          // 現在選択中の系列
   var store="";          // 現在選択中の店舗
@@ -437,10 +460,10 @@
   // 既定値：土=法外・日=法定・平日=標準勤務
   function defaultFor(d){
     // AIM(スカイシップ等)は土日営業・公休が人によりバラバラ → 既定は全日出勤、休みは各自マーク
-    if(brand && brand!=="寿リハ"){
+    if(brand && brand!=="寿リハ" && brand!=="トレーディング"){
       return {type:"出勤",start:state.std.start,end:state.std.end,brk:state.std.brk,note:""};
     }
-    // 寿リハ：土=法外・日=法定・平日=標準勤務
+    // 寿リハ・トレーディング：土=法外・日=法定・平日=標準勤務
     var wd=wdOf(d);
     if(wd===0) return {type:"休み",leave:"法定",note:""};
     if(wd===6) return {type:"休み",leave:"法外",note:""};
