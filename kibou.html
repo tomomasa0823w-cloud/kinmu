@@ -121,12 +121,19 @@
   .wdbtns button{padding:12px;border-radius:10px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;border:none;}
   .wdbtns .wdapply{background:var(--navy);color:#fff;flex:2;} .wdbtns .wdapply:active{background:var(--navy-2);}
   .wdbtns .wdclear{background:#fff;border:1px solid var(--navy);color:var(--navy);flex:1;}
+  .wdtimes{margin-top:8px;}
+  .wdtrow{display:flex;align-items:center;gap:6px;margin-top:6px;}
+  .wdtlab{width:24px;flex:none;font-weight:700;color:var(--navy);text-align:center;}
+  .wdtlab.sun{color:var(--sun);} .wdtlab.sat{color:var(--sat);}
+  .wdtrow input[type=time]{flex:1;min-width:0;padding:8px 6px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;text-align:center;}
+  .wdtrow input[type=number]{width:52px;flex:none;padding:8px 4px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;text-align:center;}
+  .wdtsep{color:var(--muted);} .wdtu{font-size:12px;color:var(--muted);}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v2.9</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.0</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
   </header>
 
@@ -169,11 +176,12 @@
   <div class="card" id="wdCard" style="margin:12px;">
     <h2>出勤曜日でまとめて入力（固定シフトの方向け）</h2>
     <div class="wdrow" id="wdChips"></div>
+    <div class="wdtimes" id="wdTimes"></div>
     <div class="wdbtns">
       <button class="wdapply" id="wdApply">この曜日で埋める</button>
       <button class="wdclear" id="wdClear">解除</button>
     </div>
-    <div class="hint" style="margin:8px 2px 0;text-align:left;">選んだ曜日＝出勤／それ以外＝法外休日（日曜＝法定）で今月を一括入力します。<b>押すとこの曜日パターンが記憶され、次の月からも自動で反映されます。</b></div>
+    <div class="hint" style="margin:8px 2px 0;text-align:left;">出勤する曜日をタップ→曜日ごとに開始・終了・休憩を設定できます（初期値は標準時間）。例：火＝〜15:00、他＝〜17:30。<br>選んだ曜日＝出勤／それ以外＝法外休日（日曜＝法定）で今月を一括入力。<b>押すと時刻つきのパターンが記憶され、次の月からも自動反映されます。</b></div>
   </div>
 
   <div class="list" id="dayList"></div>
@@ -441,7 +449,7 @@
   var ROSTER=[];         // 現在店舗の名簿
   var PUBLIC=["法定","法外"], PAID=["特休","有休","夏冬誕"];
   var state={ ym:{y:2026,m:8}, staff:{name:"",branch:"",employeeNo:""},
-    std:{start:"08:30",end:"17:30",brk:60}, days:{}, submitted:false, target:null, workdays:null };
+    std:{start:"08:30",end:"17:30",brk:60}, days:{}, submitted:false, target:null, wd:null };
   var PATTERNS={};   // 社員番号(先頭ゼロ無視)→出勤曜日[7bool]（シートから取得）
   var editKey=null, mType="出勤";
 
@@ -471,48 +479,81 @@
   }
   function effFor(d){ return state.days[dkey(d)] || defaultFor(d); }
 
-  // ===== 出勤曜日パターン（固定シフト一括入力＋記憶） =====
+  // ===== 出勤曜日パターン（固定シフト一括入力・曜日別時刻＋記憶） =====
+  // state.wd = 配列[7]（getDay 0=日..6=土）。各要素は null(休み) か {s:開始,e:終了,b:休憩分}
   var WD_DISP=[["月",1],["火",2],["水",3],["木",4],["金",5],["土",6],["日",0]];
   var WD_L=["日","月","火","水","木","金","土"];
   function wdKey(){ return "kibou_wd_"+(state.staff.employeeNo||state.staff.name||""); }
   function noKey(no){ return String(no==null?"":no).replace(/[^0-9]/g,"").replace(/^0+/,""); }
-  function anyWD(){ return !!(state.workdays && state.workdays.some(function(x){return x;})); }
-  function saveWorkdays(){ try{ if(state.workdays) localStorage.setItem(wdKey(),JSON.stringify(state.workdays)); else localStorage.removeItem(wdKey()); }catch(e){} }
-  function parseWorkdays(v){
-    var arr=[false,false,false,false,false,false,false], got=false;
-    if(Array.isArray(v)){ v.forEach(function(i){ i=parseInt(i,10); if(i>=0&&i<=6){arr[i]=true;got=true;} }); }
-    else if(typeof v==="string"){ v.split(/[^0-9]+/).forEach(function(t){ if(t!==""){var i=parseInt(t,10); if(i>=0&&i<=6){arr[i]=true;got=true;}} }); }
+  function ensureWD(){ if(!state.wd) state.wd=[null,null,null,null,null,null,null]; return state.wd; }
+  function anyWD(){ return !!(state.wd && state.wd.some(function(x){return !!x;})); }
+  function stdSlot(){ return {s:state.std.start,e:state.std.end,b:state.std.brk}; }
+  function saveWorkdays(){ try{ if(anyWD()) localStorage.setItem(wdKey(),JSON.stringify(state.wd)); else localStorage.removeItem(wdKey()); }catch(e){} }
+  // 旧形式(bool[7]/インデックス配列/"2,4"文字列)・新形式({s,e,b}配列/{"2":{e:..}}オブジェクト) を state.wd に正規化
+  function parseWD(v){
+    var arr=[null,null,null,null,null,null,null], got=false;
+    function slot(o){ o=o||{}; return {s:(o.s||o.start||state.std.start), e:(o.e||o.end||state.std.end), b:(o.b!=null?o.b:(o.brk!=null?o.brk:state.std.brk))}; }
+    if(Array.isArray(v)){
+      v.forEach(function(x,i){
+        if(x && typeof x==="object"){ arr[i]=slot(x); got=true; }
+        else if(x===true){ arr[i]=stdSlot(); got=true; }
+        else if(typeof x==="number"){ if(x>=0&&x<=6){ arr[x]=stdSlot(); got=true; } }
+      });
+    } else if(v && typeof v==="object"){
+      Object.keys(v).forEach(function(k){ var i=parseInt(k,10); if(i>=0&&i<=6){ arr[i]=slot(v[k]); got=true; } });
+    } else if(typeof v==="string"){
+      v.split(/[^0-9]+/).forEach(function(t){ if(t!==""){ var i=parseInt(t,10); if(i>=0&&i<=6){ arr[i]=stdSlot(); got=true; } } });
+    }
     return got?arr:null;
   }
   function loadWorkdays(){
     // シート(PATTERNS)優先→無ければ端末保存(localStorage)
     var k=noKey(state.staff.employeeNo);
-    if(k && PATTERNS[k]){ state.workdays=PATTERNS[k].slice(); return; }
-    try{ var r=localStorage.getItem(wdKey()); state.workdays = r?JSON.parse(r):null; }catch(e){ state.workdays=null; }
+    if(k && PATTERNS[k]){ state.wd=parseWD(PATTERNS[k]); return; }
+    try{ var r=localStorage.getItem(wdKey()); state.wd = r?parseWD(JSON.parse(r)):null; }catch(e){ state.wd=null; }
   }
   function renderWeekdayChips(){
     var box=document.getElementById("wdChips"); if(!box) return; box.innerHTML="";
     WD_DISP.forEach(function(pair){
-      var lab=pair[0], wd=pair[1], on=state.workdays&&state.workdays[wd];
+      var lab=pair[0], wd=pair[1], on=!!(state.wd&&state.wd[wd]);
       var c=document.createElement("div");
       c.className="wdchip"+(wd===0?" sun":wd===6?" sat":"")+(on?" on":"");
       c.textContent=lab;
-      c.onclick=function(){ if(!state.workdays)state.workdays=[false,false,false,false,false,false,false];
-        state.workdays[wd]=!state.workdays[wd]; if(!anyWD())state.workdays=null; saveWorkdays(); renderWeekdayChips(); };
+      c.onclick=function(){ ensureWD(); state.wd[wd]= state.wd[wd]?null:stdSlot(); if(!anyWD())state.wd=null; saveWorkdays(); renderWeekdayChips(); };
       box.appendChild(c);
+    });
+    renderWDTimes();
+  }
+  function renderWDTimes(){
+    var box=document.getElementById("wdTimes"); if(!box) return; box.innerHTML="";
+    if(!anyWD()) return;
+    WD_DISP.forEach(function(pair){
+      var lab=pair[0], wd=pair[1], slot=state.wd&&state.wd[wd];
+      if(!slot) return;
+      var row=document.createElement("div"); row.className="wdtrow";
+      row.innerHTML='<span class="wdtlab'+(wd===0?" sun":wd===6?" sat":"")+'">'+lab+'</span>'
+        +'<input type="time" class="wdts">'+'<span class="wdtsep">〜</span>'+'<input type="time" class="wdte">'
+        +'<input type="number" class="wdtb" min="0" step="5"><span class="wdtu">分</span>';
+      var ins=row.querySelectorAll("input");
+      ins[0].value=slot.s; ins[1].value=slot.e; ins[2].value=slot.b;
+      ins[0].onchange=function(){ slot.s=this.value; saveWorkdays(); };
+      ins[1].onchange=function(){ slot.e=this.value; saveWorkdays(); };
+      ins[2].onchange=function(){ slot.b=parseInt(this.value,10)||0; saveWorkdays(); };
+      box.appendChild(row);
     });
   }
   function applyWeekdayPattern(){
     if(!anyWD()){ toast("出勤する曜日を選んでください"); return; }
     for(var d=1;d<=daysInMonth();d++){
-      var wd=wdOf(d), k=dkey(d);
-      if(state.workdays[wd]) state.days[k]={type:"出勤",start:state.std.start,end:state.std.end,brk:state.std.brk,note:""};
+      var wd=wdOf(d), k=dkey(d), slot=state.wd[wd];
+      if(slot) state.days[k]={type:"出勤",start:slot.s,end:slot.e,brk:slot.b,note:""};
       else state.days[k]={type:"休み",leave:(wd===0?"法定":"法外"),note:""};
     }
     state.submitted=false; saveWorkdays(); save(); render();
     toast("「"+wdLabel()+"」で埋めました");
   }
-  function wdLabel(){ if(!state.workdays)return""; var a=[]; for(var w=0;w<7;w++) if(state.workdays[w]) a.push(WD_L[w]); return a.join("・"); }
+  function wdLabel(){ if(!anyWD())return""; var a=[]; for(var i=0;i<WD_DISP.length;i++){ var wd=WD_DISP[i][1], slot=state.wd[wd];
+      if(slot){ var diff=(slot.s!==state.std.start||slot.e!==state.std.end); a.push(WD_L[wd]+(diff?"("+slot.s+"〜"+slot.e+")":"")); } } return a.join("・"); }
   function autoApplyWD(){ if(anyWD() && Object.keys(state.days).length===0) applyWeekdayPattern(); }
 
   function render(){
@@ -731,10 +772,10 @@
   }
 
   function buildOut(){
-    var wdArr=null; if(state.workdays){ wdArr=[]; for(var w=0;w<7;w++) if(state.workdays[w]) wdArr.push(w); }
-    var out={version:"0.9",staff:{name:state.staff.name,branch:state.staff.branch,employeeNo:state.staff.employeeNo},
+    var wdArr=null, wdTimes=null; if(anyWD()){ wdArr=[]; wdTimes={}; for(var w=0;w<7;w++){ if(state.wd[w]){ wdArr.push(w); wdTimes[w]={s:state.wd[w].s,e:state.wd[w].e,b:state.wd[w].b}; } } }
+    var out={version:"1.0",staff:{name:state.staff.name,branch:state.staff.branch,employeeNo:state.staff.employeeNo},
       month:ym(),standard:{start:state.std.start,end:state.std.end,"break":state.std.brk},
-      workdays:wdArr,workdaysLabel:wdLabel(),
+      workdays:wdArr,workdayTimes:wdTimes,workdaysLabel:wdLabel(),
       kokyuTarget:(function(){var m=ym();if(store&&TARGETS[store+"|"+m]!=null)return TARGETS[store+"|"+m];if(brand&&TARGETS[brand+"|"+m]!=null)return TARGETS[brand+"|"+m];return null;})(),days:{}};
     for(var d=1;d<=daysInMonth();d++){
       var k=dkey(d), v=state.days[k]||defaultFor(d);
@@ -847,8 +888,15 @@
       if(Array.isArray(list)){
         list.forEach(function(row){
           if(!row) return;
-          var k=noKey(row.no); var wd=parseWorkdays(row.workdays);
-          if(k && wd) PATTERNS[k]=wd;
+          var k=noKey(row.no); if(!k) return;
+          // 出勤曜日(インデックス)＋時刻(JSON)から {"2":{s,e,b}} 形を作る
+          var idx=[]; String(row.workdays||"").split(/[^0-9]+/).forEach(function(t){ if(t!==""){var i=parseInt(t,10); if(i>=0&&i<=6)idx.push(i);} });
+          var tm=row.times; if(typeof tm==="string"){ try{ tm=JSON.parse(tm); }catch(e){ tm=null; } }
+          if(!idx.length && !(tm&&typeof tm==="object")) return;
+          var obj={};
+          idx.forEach(function(i){ obj[i]=(tm&&tm[i])?tm[i]:{}; });
+          if(tm&&typeof tm==="object"){ Object.keys(tm).forEach(function(kk){ var i=parseInt(kk,10); if(i>=0&&i<=6) obj[i]=tm[kk]; }); }
+          PATTERNS[k]=obj;
         });
         // 既に人が選ばれていて、まだ曜日未設定なら反映
         if(state.staff.employeeNo && !anyWD()){ loadWorkdays(); renderWeekdayChips(); }
@@ -861,7 +909,7 @@
   }
 
   document.getElementById("wdApply").onclick=applyWeekdayPattern;
-  document.getElementById("wdClear").onclick=function(){ state.workdays=null; saveWorkdays(); renderWeekdayChips(); toast("曜日パターンを解除しました"); };
+  document.getElementById("wdClear").onclick=function(){ state.wd=null; saveWorkdays(); renderWeekdayChips(); toast("曜日パターンを解除しました"); };
 
   bindStd(); load(); render(); renderWeekdayChips(); fetchTargets(); fetchRosters(); fetchPatterns();
 })();
