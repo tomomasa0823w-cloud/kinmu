@@ -53,7 +53,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>勤務表反映ツール<span class="ver">v1.6</span></h1>
+    <h1>勤務表反映ツール<span class="ver">v1.7</span></h1>
     <p>店舗テンプレを保存 → 月を選ぶだけ → シートの希望を反映して保存</p>
   </header>
 
@@ -229,6 +229,11 @@ def reflect(xlsx_bytes, requests, roster, target_month=None):
             elif s0 and e0:
                 ws.cell(rs,col).value=s0; ws.cell(rs+1,col).value=e0
                 ws.cell(rs+2,col).value=(int(br0) if br0 not in (None,'',0,'0') else None)
+    # 出力はシート保護(ロック)を解除して編集可能に
+    for _ws in wb.worksheets:
+        try:
+            _ws.protection.sheet=False; _ws.protection.enabled=False
+        except Exception: pass
     wb.calculation.fullCalcOnLoad=True
     out=io.BytesIO(); wb.save(out)
     return out.getvalue(), json.dumps(report, ensure_ascii=False)
