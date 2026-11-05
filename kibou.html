@@ -133,7 +133,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.2</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.3</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
   </header>
 
@@ -452,6 +452,7 @@
   var state={ ym:{y:2026,m:8}, staff:{name:"",branch:"",employeeNo:""},
     std:{start:"08:30",end:"17:30",brk:60}, days:{}, submitted:false, target:null, wd:null };
   var PATTERNS={};   // 社員番号(先頭ゼロ無視)→出勤曜日[7bool]（シートから取得）
+  var PATTERNS_STD={}; // 社員番号(先頭ゼロ無視)→標準時間{start,end,brk}（シートから取得）
   var editKey=null, mType="出勤";
 
   function ym(){ return state.ym.y+"-"+String(state.ym.m).padStart(2,"0"); }
@@ -512,6 +513,15 @@
     var k=noKey(state.staff.employeeNo);
     if(k && PATTERNS[k]){ state.wd=parseWD(PATTERNS[k]); return; }
     try{ var r=localStorage.getItem(wdKey()); state.wd = r?parseWD(JSON.parse(r)):null; }catch(e){ state.wd=null; }
+  }
+  // 本人が携帯で上書きした標準時間があれば、名簿の既定より優先してベースにする
+  function loadStd(){
+    var k=noKey(state.staff.employeeNo);
+    if(k && PATTERNS_STD[k]){ var o=PATTERNS_STD[k];
+      if(o.start) state.std.start=o.start;
+      if(o.end) state.std.end=o.end;
+      if(o.brk!=null && o.brk!=="") state.std.brk=o.brk;
+    }
   }
   function renderWeekdayChips(){
     var box=document.getElementById("wdChips"); if(!box) return; box.innerHTML="";
@@ -726,6 +736,7 @@
     var p=ROSTER[i];
     state.staff={name:p.name,branch:store,employeeNo:p.no};
     state.std={start:p.start,end:p.end,brk:p.brk};
+    loadStd();   // 携帯で上書き済みの標準時間があれば優先
     document.getElementById("manualBox").classList.remove("on");
     document.getElementById("selInfo").innerHTML='選択中：<b>'+p.name.replace("　"," ")+'</b>（社員番号 '+p.no+'／'+p.kubun+'）';
     setSelectValue(i); applyStdInputs();
@@ -893,14 +904,20 @@
           // 出勤曜日(インデックス)＋時刻(JSON)から {"2":{s,e,b}} 形を作る
           var idx=[]; String(row.workdays||"").split(/[^0-9]+/).forEach(function(t){ if(t!==""){var i=parseInt(t,10); if(i>=0&&i<=6)idx.push(i);} });
           var tm=row.times; if(typeof tm==="string"){ try{ tm=JSON.parse(tm); }catch(e){ tm=null; } }
-          if(!idx.length && !(tm&&typeof tm==="object")) return;
           var obj={};
           idx.forEach(function(i){ obj[i]=(tm&&tm[i])?tm[i]:{}; });
           if(tm&&typeof tm==="object"){ Object.keys(tm).forEach(function(kk){ var i=parseInt(kk,10); if(i>=0&&i<=6) obj[i]=tm[kk]; }); }
-          PATTERNS[k]=obj;
+          if(idx.length || (tm&&typeof tm==="object")) PATTERNS[k]=obj;
+          // 標準時間(JSON)を取り込む
+          var sd=row.std; if(typeof sd==="string"){ try{ sd=JSON.parse(sd); }catch(e){ sd=null; } }
+          if(sd&&typeof sd==="object"&&(sd.start||sd.end)){
+            PATTERNS_STD[k]={start:sd.start||"", end:sd.end||"", brk:(sd["break"]!=null?sd["break"]:(sd.brk!=null?sd.brk:""))};
+          }
         });
         // 既に人が選ばれていて、まだ曜日未設定なら反映
         if(state.staff.employeeNo && !anyWD()){ loadWorkdays(); renderWeekdayChips(); }
+        // 標準時間も、選択済みの人にベースとして反映
+        if(state.staff.employeeNo){ var sk=noKey(state.staff.employeeNo); if(sk&&PATTERNS_STD[sk]){ loadStd(); applyStdInputs(); } }
       }
     };
     s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove(); };
