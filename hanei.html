@@ -53,7 +53,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>勤務表反映ツール<span class="ver">v1.8</span></h1>
+    <h1>勤務表反映ツール<span class="ver">v2.0</span></h1>
     <p>店舗テンプレを保存 → 月を選ぶだけ → シートの希望を反映して保存</p>
   </header>
 
@@ -103,7 +103,7 @@
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
 <script>
-const DEFAULT_GAS = "https://script.google.com/macros/s/AKfycbxqDHuCPjS38klVA-5_t3-KY_JyqP2xdn-gr-H7Gctzh_URIofmBLKUI0lixULYz4LbUQ/exec";
+const DEFAULT_GAS = "https://script.google.com/macros/s/AKfycbzEd9tAXAmGsOkGVHyu4GEaHLka6LOfS7eeuSHtDI9rWElPBDjeU4qu02RKoon9gWUl/exec";
 
 const PY = String.raw`
 import io, json, calendar, datetime, unicodedata, re
@@ -272,7 +272,10 @@ function targetMonth(){ const y=document.getElementById('selYear').value; const 
 // ---- GAS URL 記憶 ----
 (function initGas(){
   let u=DEFAULT_GAS,t='';
-  try{ u=localStorage.getItem('gasUrl')||DEFAULT_GAS; t=localStorage.getItem('gasToken')||''; }catch(e){}
+  try{ u=localStorage.getItem('gasUrl')||DEFAULT_GAS; t=localStorage.getItem('gasToken')||'';
+    // 旧・無効URL(404)を保存している場合は新URLへ自動置換
+    if(u.indexOf('AKfycbxqDHuCPjS38klVA-5_t3-KY_JyqP2xdn-gr-H7Gctzh_URIofmBLKUI0lixULYz4LbUQ')>=0){ u=DEFAULT_GAS; try{localStorage.setItem('gasUrl',u);}catch(e2){} }
+  }catch(e){}
   document.getElementById('gasUrl').value=u; document.getElementById('gasToken').value=t;
 })();
 
@@ -450,7 +453,7 @@ function showFugashiReport(list, orphan){
 }
 function renderFugashiDownloads(list){
   const box=document.getElementById('multiDl'); box.classList.add('on');
-  let html='<div style="font-size:12px;color:var(--muted);margin:0 2px 8px;">職種別に4ファイル出力されました。各ボタンからダウンロードしてください。</div>';
+  let html='<div style="font-size:12px;color:var(--muted);margin:0 2px 8px;">'+list.length+'ファイル出力されました。各ボタンからダウンロードしてください。</div>';
   list.forEach((o,i)=>{ html+='<button class="dlbtn on" data-i="'+i+'" style="position:static;width:100%;margin:0 0 8px;">▼ '+o.label+' をダウンロード</button>'; });
   box.innerHTML=html;
   Array.prototype.forEach.call(box.querySelectorAll('button[data-i]'),function(btn){
@@ -478,12 +481,35 @@ async function runTrading(url,token,ym){
   subs=subs.filter(s=>{ const b=(s.staff&&s.staff.branch)||''; return !b || b===TRAD_STORE; });
   log('トレーディングの希望 '+subs.length+'件');
   await ensurePy();
+
+  // 名簿(rosters)をライブ取得 → トレーディング分を「社員・エース」「利用者」に分割
+  // ※ スプレッドシートの名簿が常に正。追加・削除はここに反映されます。
+  let groups=null;
+  try{
+    let rq=url+'?type=rosters'; if(token)rq+='&token='+encodeURIComponent(token);
+    let all=await jsonp(rq);
+    if(Array.isArray(all)){
+      let roster=all.filter(r=>String((r.store||'')).trim()===TRAD_STORE)
+                    .sort((a,b)=>((a.sort==null?999999:Number(a.sort))-(b.sort==null?999999:Number(b.sort))));
+      const toRec=r=>({no:r.no,name:r.name,kubun:(r.kubun||'社員'),shokushu:(r.shokushu||''),start:r.start,end:r.end,brk:r.brk,sort:r.sort,store:TRAD_STORE});
+      const staff=roster.filter(r=>String(r.kubun||'').trim()!=='利用者').map(toRec);
+      const users=roster.filter(r=>String(r.kubun||'').trim()==='利用者').map(toRec);
+      log('トレーディング 名簿(rosters) '+roster.length+'名（社員・エース '+staff.length+' / 利用者 '+users.length+'）');
+      groups=[];
+      if(staff.length) groups.push({label:'社員・エース',recs:staff});
+      if(users.length) groups.push({label:'利用者',recs:users});
+    }
+  }catch(e){ log('名簿取得に失敗 → 内蔵名簿で反映します'); }
+  if(!groups || !groups.length){ log('※ rostersにトレーディングが無いため内蔵名簿を使用'); groups=TRAD_GROUPS; }
+
   multiOut=[];
+  let usedSub=new Set();
   const tplBytes=b64ToBytes(TRAD_TPL);
-  for(const grp of TRAD_GROUPS){
+  for(const grp of groups){
     const noset=new Set(grp.recs.map(r=>_fnum(r.no)).filter(Boolean));
     const nameset=new Set(grp.recs.map(r=>_fname(r.name)));
     const subM=subs.filter(s=>{ const st=s.staff||{}; return noset.has(_fnum(st.employeeNo)) || nameset.has(_fname(st.name)); });
+    subM.forEach(s=>{ const k=_fnum((s.staff||{}).employeeNo)||_fname((s.staff||{}).name); if(k)usedSub.add(k); });
     log('― '+grp.label+'：名簿'+grp.recs.length+'名 / 希望'+subM.length+'件 反映中…');
     pyodide.FS.writeFile('/in.xlsx', tplBytes);
     pyodide.globals.set('xlsx_in', pyodide.FS.readFile('/in.xlsx'));
@@ -499,7 +525,10 @@ _rep
     const fname='勤務表【トレーディング】'+ym+' '+grp.label+'_反映済.xlsx';
     multiOut.push({label:grp.label, fname:fname, bytes:bytes, report:JSON.parse(res)});
   }
-  showFugashiReport(multiOut, []);
+  // 名簿のどのグループにも該当しない希望（名簿未登録の可能性）を警告
+  const orphan=subs.filter(s=>{ const k=_fnum((s.staff||{}).employeeNo)||_fname((s.staff||{}).name); return k && !usedSub.has(k); })
+                   .map(s=>((s.staff||{}).name||(s.staff||{}).employeeNo||'?'));
+  showFugashiReport(multiOut, orphan);
   renderFugashiDownloads(multiOut);
   log('完了。各ファイルをダウンロードできます。');
 }
