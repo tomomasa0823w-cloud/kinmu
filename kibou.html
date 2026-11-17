@@ -133,8 +133,9 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.5</span></div>
-    <div class="sub" id="staffLine">氏名・店舗を入力してください</div></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.6</span></div>
+    <div class="sub" id="staffLine">氏名・店舗を入力してください</div>
+    <div id="rosterStatus" style="margin-top:4px;font-size:12px;font-weight:700;color:#b26a00;">名簿：読込中…</div></div>
   </header>
 
   <div class="card">
@@ -865,6 +866,7 @@
     s.src=q; document.body.appendChild(s);
   }
 
+  function setRosterStatus(txt,color){ var el=document.getElementById("rosterStatus"); if(el){ el.textContent=txt; el.style.color=color; } }
   // 名簿をGoogleシート(rostersタブ)から取得して GROUPS を組み立てる
   function fetchRosters(){
     if(!SUBMIT_URL) return;
@@ -874,18 +876,22 @@
       try{ delete window[cb]; }catch(e){}
       s.remove();
       if(Array.isArray(list) && list.length){
-        var g={};
+        var g={}, cnt=0;
         list.forEach(function(r){
           if(!r.store || !r.name) return;
           var grp=r.group||"寿リハ";
           g[grp]=g[grp]||{}; g[grp][r.store]=g[grp][r.store]||[];
           g[grp][r.store].push({name:r.name,no:r.no||"",kubun:r.kubun||"社員",
             start:r.start||"08:30",end:r.end||"17:30",brk:(r.brk!=null?parseInt(r.brk,10):60)});
+          cnt++;
         });
-        if(Object.keys(g).length){ GROUPS=g; buildBrands(); buildStores(); buildRoster(); }
+        if(Object.keys(g).length){ GROUPS=g; buildBrands(); buildStores(); buildRoster();
+          setRosterStatus("✓ 名簿：スプレッドシート最新（全"+cnt+"名）","#1a7f37"); return; }
       }
+      setRosterStatus("⚠ 名簿：内蔵バックアップ表示中（シート未接続・最新ではありません）","#b26a00");
     };
-    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove(); };
+    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove();
+      setRosterStatus("⚠ 名簿：内蔵バックアップ表示中（受け皿に接続できません）","#c0392b"); };
     var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=rosters&callback="+cb;
     if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
     s.src=q; document.body.appendChild(s);
