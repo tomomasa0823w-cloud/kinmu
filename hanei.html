@@ -53,7 +53,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>勤務表反映ツール<span class="ver">v2.1</span></h1>
+    <h1>勤務表反映ツール<span class="ver">v2.2</span></h1>
     <p>店舗テンプレを保存 → 月を選ぶだけ → シートの希望を反映して保存</p>
   </header>
 
@@ -283,25 +283,22 @@ function refresh(){ document.getElementById('runBtn').disabled=!(selectedTpl && 
 document.getElementById('gasUrl').oninput=refresh;
 
 // ---- JSONP 取得 ----
-function jsonpOnce(url,timeoutMs){return new Promise((res,rej)=>{
-  const cb='__gas'+Date.now()+'_'+Math.floor(Math.random()*100000);
-  const s=document.createElement('script');
-  let done=false;
-  const clean=()=>{try{delete window[cb];}catch(e){} try{s.remove();}catch(e){}};
-  const tid=setTimeout(()=>{ if(done)return; done=true; clean(); rej(new Error('timeout')); }, timeoutMs||35000);
-  window[cb]=(d)=>{ if(done)return; done=true; clearTimeout(tid); clean(); res(d); };
-  s.onerror=()=>{ if(done)return; done=true; clearTimeout(tid); clean(); rej(new Error('load')); };
-  s.src=url+(url.includes('?')?'&':'?')+'callback='+cb; document.body.appendChild(s);
-});}
-// 初回はGASのコールドスタートで遅い/一時失敗することがあるため、タイムアウト＋自動リトライ
+// 受け皿からGET取得（cookieを送らない＝匿名扱い。複数Googleアカウントでログイン中でも確実に取得できる）
+// 初回はGASのコールドスタートで遅い/一時失敗することがあるため、タイムアウト＋自動リトライ付き
 async function jsonp(url){
   let lastErr=null;
   for(let i=0;i<3;i++){
     if(i>0) log('取得リトライ '+i+'/2 …');
-    try{ return await jsonpOnce(url, i===0?40000:30000); }
-    catch(e){ lastErr=e; await new Promise(r=>setTimeout(r,1500)); }
+    try{
+      const ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+      const tid=setTimeout(()=>{ if(ctrl)ctrl.abort(); }, i===0?40000:30000);
+      const r=await fetch(url,{method:'GET',credentials:'omit',redirect:'follow',signal:ctrl?ctrl.signal:undefined});
+      clearTimeout(tid);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){ lastErr=e; await new Promise(res=>setTimeout(res,1500)); }
   }
-  throw new Error('取得失敗（URL・公開設定を確認）'+(lastErr?'【'+lastErr.message+'】':''));
+  throw new Error('取得失敗（URL・公開設定を確認）'+(lastErr?'【'+(lastErr.message||lastErr.name)+'】':''));
 }
 
 async function ensurePy(){

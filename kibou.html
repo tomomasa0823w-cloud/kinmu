@@ -133,7 +133,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.6</span></div>
+    <div><div class="brand"><h1>勤務希望入力</h1><span class="ver">v3.7</span></div>
     <div class="sub" id="staffLine">氏名・店舗を入力してください</div>
     <div id="rosterStatus" style="margin-top:4px;font-size:12px;font-weight:700;color:#b26a00;">名簿：読込中…</div></div>
   </header>
@@ -844,13 +844,27 @@
   var tt; function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on");},1800);}
 
   // 管理者設定の公休目標をシートから取得（読み取り専用）
+  // 受け皿からGET取得（cookieを送らない＝匿名扱い。複数Googleアカウントでログイン中でも確実に取得できる）
+  function gasGet(url){
+    return new Promise(function(resolve,reject){
+      var tries=0;
+      function go(){
+        tries++;
+        var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+        var tid=setTimeout(function(){ if(ctrl)ctrl.abort(); }, tries===1?40000:30000);
+        fetch(url,{method:"GET",credentials:"omit",redirect:"follow",signal:ctrl?ctrl.signal:undefined})
+          .then(function(r){ clearTimeout(tid); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+          .then(resolve)
+          .catch(function(e){ clearTimeout(tid); if(tries<3){ setTimeout(go,1500); } else { reject(e); } });
+      }
+      go();
+    });
+  }
   function fetchTargets(){
     if(!SUBMIT_URL) return;
-    var cb="__tgt"+Date.now();
-    var s=document.createElement("script");
-    window[cb]=function(list){
-      try{ delete window[cb]; }catch(e){}
-      s.remove();
+    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=targets";
+    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
+    gasGet(q).then(function(list){
       if(Array.isArray(list)){
         list.forEach(function(row){
           if(row && row.branch && row.month && row.target!=null && row.target!==""){
@@ -859,22 +873,16 @@
         });
         render();
       }
-    };
-    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove(); };
-    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=targets&callback="+cb;
-    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
-    s.src=q; document.body.appendChild(s);
+    }).catch(function(){});
   }
 
   function setRosterStatus(txt,color){ var el=document.getElementById("rosterStatus"); if(el){ el.textContent=txt; el.style.color=color; } }
   // 名簿をGoogleシート(rostersタブ)から取得して GROUPS を組み立てる
   function fetchRosters(){
     if(!SUBMIT_URL) return;
-    var cb="__ros"+Date.now();
-    var s=document.createElement("script");
-    window[cb]=function(list){
-      try{ delete window[cb]; }catch(e){}
-      s.remove();
+    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=rosters";
+    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
+    gasGet(q).then(function(list){
       if(Array.isArray(list) && list.length){
         var g={}, cnt=0;
         list.forEach(function(r){
@@ -889,22 +897,17 @@
           setRosterStatus("✓ 名簿：スプレッドシート最新（全"+cnt+"名）","#1a7f37"); return; }
       }
       setRosterStatus("⚠ 名簿：内蔵バックアップ表示中（シート未接続・最新ではありません）","#b26a00");
-    };
-    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove();
-      setRosterStatus("⚠ 名簿：内蔵バックアップ表示中（受け皿に接続できません）","#c0392b"); };
-    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=rosters&callback="+cb;
-    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
-    s.src=q; document.body.appendChild(s);
+    }).catch(function(){
+      setRosterStatus("⚠ 名簿：内蔵バックアップ表示中（受け皿に接続できません）","#c0392b");
+    });
   }
 
   // 出勤曜日パターンをシートから取得（type=patterns→[{no,workdays}]）。取得後、選択中の人に反映
   function fetchPatterns(){
     if(!SUBMIT_URL) return;
-    var cb="__pat"+Date.now();
-    var s=document.createElement("script");
-    window[cb]=function(list){
-      try{ delete window[cb]; }catch(e){}
-      s.remove();
+    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=patterns";
+    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
+    gasGet(q).then(function(list){
       if(Array.isArray(list)){
         list.forEach(function(row){
           if(!row) return;
@@ -927,11 +930,7 @@
         // 標準時間も、選択済みの人にベースとして反映
         if(state.staff.employeeNo){ var sk=noKey(state.staff.employeeNo); if(sk&&PATTERNS_STD[sk]){ loadStd(); applyStdInputs(); } }
       }
-    };
-    s.onerror=function(){ try{delete window[cb];}catch(e){} s.remove(); };
-    var q=SUBMIT_URL+(SUBMIT_URL.indexOf("?")>=0?"&":"?")+"type=patterns&callback="+cb;
-    if(TOKEN) q+="&token="+encodeURIComponent(TOKEN);
-    s.src=q; document.body.appendChild(s);
+    }).catch(function(){});
   }
 
   document.getElementById("wdApply").onclick=applyWeekdayPattern;
