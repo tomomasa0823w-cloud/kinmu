@@ -53,7 +53,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>勤務表反映ツール<span class="ver">v2.2</span></h1>
+    <h1>勤務表反映ツール<span class="ver">v2.3</span></h1>
     <p>店舗テンプレを保存 → 月を選ぶだけ → シートの希望を反映して保存</p>
   </header>
 
@@ -103,7 +103,7 @@
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
 <script>
-const DEFAULT_GAS = "https://script.google.com/macros/s/AKfycbzEd9tAXAmGsOkGVHyu4GEaHLka6LOfS7eeuSHtDI9rWElPBDjeU4qu02RKoon9gWUl/exec";
+const DEFAULT_GAS = "https://script.google.com/macros/s/AKfycbxqDHuCPjS38klVA-5_t3-KY_JyqP2xdn-gr-H7Gctzh_URIofmBLKUI0lixULYz4LbUQ/exec";
 
 const PY = String.raw`
 import io, json, calendar, datetime, unicodedata, re
@@ -273,8 +273,8 @@ function targetMonth(){ const y=document.getElementById('selYear').value; const 
 (function initGas(){
   let u=DEFAULT_GAS,t='';
   try{ u=localStorage.getItem('gasUrl')||DEFAULT_GAS; t=localStorage.getItem('gasToken')||'';
-    // 旧・無効URL(404)を保存している場合は新URLへ自動置換
-    if(u.indexOf('AKfycbxqDHuCPjS38klVA-5_t3-KY_JyqP2xdn-gr-H7Gctzh_URIofmBLKUI0lixULYz4LbUQ')>=0){ u=DEFAULT_GAS; try{localStorage.setItem('gasUrl',u);}catch(e2){} }
+    // 誤って別シート(12月1件のみ)のURLを保存している場合は、正しい受け皿へ自動置換
+    if(u.indexOf('AKfycbzEd9tAXAmGsOkGVHyu4GEaHLka6LOfS7eeuSHtDI9rWElPBDjeU4qu02RKoon9gWUl')>=0){ u=DEFAULT_GAS; try{localStorage.setItem('gasUrl',u);}catch(e2){} }
   }catch(e){}
   document.getElementById('gasUrl').value=u; document.getElementById('gasToken').value=t;
 })();
